@@ -5,9 +5,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import express, { Express, NextFunction, Request, Response, Router } from 'express';
-import type { RequestHandler } from 'express';
-import { OpenAPIV3 } from 'openapi-types';
+import express, { Express, NextFunction, Request, Response, Router, RequestHandler } from 'express';
 import { onlyForTesting } from '../express-parser';
 import { parseExpressApp } from '../index';
 import { ExpressRegex } from '../types';
@@ -43,7 +41,7 @@ const twoDynamicPaths = () => {
   };
 };
 
-const operationObject: OpenAPIV3.OperationObject = {
+const operationObject = {
   description: 'Returns pets based on ID',
   summary: 'Find pets by ID',
   operationId: 'getPetsById',
