@@ -8,9 +8,9 @@ import { Express, Router } from 'express';
 import { RouteMetaData, ExpressRegex, Key, Layer, Parameter, Route } from '../types';
 
 /**
+ * Parses an Express app and generates list of routes with meta data
  *
- * @param app
- * @param middlewareWrapper
+ * @param app The Express app reference. Must be used after all routes have been attached
  * @returns List of routes for this express app with meta-data that has been picked up
  */
 export const parseExpressApp = (app: Express): RouteMetaData[] => {
@@ -85,7 +85,7 @@ class ExpressPathParser {
  *
  * @param layerRegexPath The layer's regex pattern
  * @param keys The keys that represent the layer's path parameters
- * @returns {string} The path string for that layer
+ * @returns The path string for that layer
  * Code inspired and modify from:
  * https://github.com/expressjs/express/issues/3308#issuecomment-300957572
  */
@@ -123,7 +123,7 @@ const pathRegexParser = (layerRegexPath: ExpressRegex | string, keys: Key[]): st
  *
  * @param layerRegexPath The regex for a react router with path parameters
  * @param keys The keys that represent the path parameters
- * @returns {string} The regex for a path variable converted to original string on the express route
+ * @returns The regex for a path variable converted to original string on the express route
  */
 const mapKeysToPath = (layerRegexPath: ExpressRegex, keys: Key[]): string => {
   if (!keys || keys.length === 0) {
