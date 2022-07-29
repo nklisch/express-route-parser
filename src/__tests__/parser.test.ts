@@ -8,7 +8,7 @@
 import express, { Express, NextFunction, Request, Response, Router, RequestHandler } from 'express';
 import { onlyForTesting } from '../express-parser';
 import { parseExpressApp } from '../index';
-import { ExpressRegex } from '../types';
+import { ExpressRegex } from '../index';
 
 const staticPath = /^\/sub-route2\/?(?=\/|$)/i as ExpressRegex;
 const oneDynamicPath = () => {
