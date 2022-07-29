@@ -79,26 +79,7 @@ import express, { RequestHandler, Request, Response, NextFunction } from 'expres
     
     // You must parse your express app after you have added any and all routes in your app
     const parsed = parseExpressApp(app);
-    console.log(parsed[0].pathParams);
-    console.log(parsed[1].pathParams);
-    expect(parsed).toEqual([
-        {
-            path: '/resources/users/:id',
-            pathParams: [{ name: 'id', in: 'path', required: true }],
-            method: 'get',
-            metadata: { operationId: 'getUserById', notes: 'These are some notes' },
-        },
-        {
-            path: '/dashboard/:entity/:resourceId',
-            pathParams: [
-                { name: 'entity', in: 'path', required: true },
-                { name: 'resourceId', in: 'path', required: true },
-            ],
-            method: 'get',
-            metadata: { operationId: 'getResourceByEntity', hidden: true, schema: {} },
-        },
-    ]);
-
+    console.log(parsed);
 ```
 
 **Output**
