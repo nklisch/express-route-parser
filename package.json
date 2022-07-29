@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nklisch/express-openapi-tools.git"
+    "url": "git+https://github.com/nklisch/express-route-parser.git"
   },
   "funding": {
     "type": "buyMeACoffee",

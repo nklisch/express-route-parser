@@ -1,45 +1,14 @@
-# express-route-parser
-This package parses an express project, generating a list of all routes, converted to the syntax used in a express route.
-
-## Features
-Can Parse:
-- Nested Routers and Complex Express Projects
-- Optional parameters e.g. `/:name?`
-- Complex Matching routes e.g. `/ma*tch`, `/ex(ab)?mple`
-- Regex routes e.g. `/\/abc|\/xyz/`
-- Array of paths e.g. `app.get(['/abc', '/xyz']) -> /abc,xyz/`
-
-Outputs list of relevant data with the option to attach arbitrary meta-data to a route:
- ```javascript
-    // Example output for a single route
-    [{
-            path: '/dashboard/:entity/:resourceId',
-            pathParams: [
-                { name: 'entity', in: 'path', required: true },
-                { name: 'resourceId', in: 'path', required: true },
-            ],
-            method: 'get',
-            // metadata can be anything the designer chooses
-            metadata: { 
-                operationId: 'getResourceByEntity', 
-                hidden: true, 
-                schema: {/* some schema */} 
-                },
-        }]
- ```
-## Installation
-```
-npm i express-route-parser
-```
-
-## Usage
-```javascript
-import { parseExpressApp } from 'express-route-parser';
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+import { parseExpressApp } from '../index';
 import express, { RequestHandler, Request, Response, NextFunction } from 'express';
- const app = express();
+
+it('runs the example code', () => {
+    const app = express();
     const router = express.Router();
     const subrouter = express.Router();
-
     // **Optional middleware construct**
     // Wrapper function to allow us to attach meta-data to a route in a re-usable way
     const middleware = (metadata: any): RequestHandler => {
@@ -97,28 +66,4 @@ import express, { RequestHandler, Request, Response, NextFunction } from 'expres
             metadata: { operationId: 'getResourceByEntity', hidden: true, schema: {} },
         },
     ]);
-
-```
-
-**Output**
-```javascript
-parsedApp = 
-    [
-        {
-            path: '/resources/users/:id',
-            pathParams: [{ name: 'id', in: 'path', required: true }],
-            method: 'get',
-            metadata: { operationId: 'getUserById', notes: 'These are some notes' },
-        },
-        {
-            path: '/dashboard/:entity/:resourceId',
-            pathParams: [
-                { name: 'entity', in: 'path', required: true },
-                { name: 'resourceId', in: 'path', required: true },
-            ],
-            method: 'get',
-            metadata: { operationId: 'getResourceByEntity', hidden: true, schema: {} },
-        },
-    ]
-```
-
+});

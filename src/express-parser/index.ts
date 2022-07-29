@@ -13,18 +13,16 @@ import { RouteMetaData, ExpressRegex, Key, Layer, Parameter, Route } from '../ty
  * @param middlewareWrapper
  * @returns List of routes for this express app with meta-data that has been picked up
  */
-export const parseExpressApp = (app: Express, middlewareFunctionName?: string): RouteMetaData[] => {
-  return new ExpressPathParser(app, middlewareFunctionName).appPaths;
+export const parseExpressApp = (app: Express): RouteMetaData[] => {
+  return new ExpressPathParser(app).appPaths;
 };
 
 class ExpressPathParser {
   private readonly _appPaths: RouteMetaData[];
-  private readonly middlewareFunctionName?: string;
   public get appPaths() {
     return this._appPaths;
   }
-  constructor(app: Express, middlewareFunctionName?: string) {
-    this.middlewareFunctionName = middlewareFunctionName;
+  constructor(app: Express) {
     this._appPaths = [];
     const router: Router = app._router || app.router;
     if (router) {
@@ -67,12 +65,7 @@ class ExpressPathParser {
     const pathParams: Parameter[] = keys.map((key) => {
       return { name: key.name, in: 'path', required: !key.optional };
     });
-    const filtered = layer.route.stack.filter(
-      (element) =>
-        this.middlewareFunctionName &&
-        element.name === this.middlewareFunctionName &&
-        (element?.handle as Route)?.metadata,
-    );
+    const filtered = layer.route.stack.filter((element) => (element?.handle as Route)?.metadata);
     if (filtered.length > 1) {
       throw new Error('Only one metadata middleware is allowed per route');
     }

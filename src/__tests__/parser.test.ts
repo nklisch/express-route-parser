@@ -1,11 +1,10 @@
-/* eslint-disable prefer-arrow/prefer-arrow-functions */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable no-console */
+
 import express, { Express, NextFunction, Request, Response, Router } from 'express';
 import type { RequestHandler } from 'express';
 import { OpenAPIV3 } from 'openapi-types';
@@ -76,13 +75,12 @@ const operationObject: OpenAPIV3.OperationObject = {
 };
 
 const middleware = (metadata: any): RequestHandler => {
-  const m = function MyUniqueMiddlewareName(req: Request, res: Response, next: NextFunction) {
+  const m = (req: Request, res: Response, next: NextFunction) => {
     next();
   };
   m.metadata = metadata;
   return m;
 };
-const middlewareName = 'MyUniqueMiddlewareName';
 
 describe('mapKeysToPath: maps keys to path', () => {
   it('handles one dynamic path parameter', () => {
@@ -147,7 +145,7 @@ describe('it parses an express app with', () => {
 
   it('a route', () => {
     app.get('/test/the/endpoint', successResponse);
-    const parsed = parseExpressApp(app, middlewareName);
+    const parsed = parseExpressApp(app);
     const { path, method, pathParams } = parsed[0];
     expect(path).toBe('/test/the/endpoint');
     expect(method).toBe('get');
@@ -156,7 +154,7 @@ describe('it parses an express app with', () => {
 
   it('a path parameter', () => {
     app.delete('/test/:id/endpoint', successResponse);
-    const parsed = parseExpressApp(app, middlewareName);
+    const parsed = parseExpressApp(app);
     const { path, method, pathParams } = parsed[0];
     expect(path).toBe('/test/:id/endpoint');
     expect(method).toBe('delete');
@@ -165,7 +163,7 @@ describe('it parses an express app with', () => {
 
   it('a optional path parameter', () => {
     app.patch('/test/:id?/endpoint', successResponse);
-    const parsed = parseExpressApp(app, middlewareName);
+    const parsed = parseExpressApp(app);
     const { path, method, pathParams } = parsed[0];
     expect(path).toBe('/test/:id?/endpoint');
     expect(method).toBe('patch');
@@ -175,7 +173,7 @@ describe('it parses an express app with', () => {
   it('multiple path parameters', () => {
     app.post('/test/:name/:id/:day', successResponse);
     app.get('/test/:id?/:test?/:cid?', successResponse);
-    const parsed = parseExpressApp(app, middlewareName);
+    const parsed = parseExpressApp(app);
     let { path, method, pathParams } = parsed[0];
     expect(path).toBe('/test/:name/:id/:day');
     expect(method).toBe('post');
@@ -196,7 +194,7 @@ describe('it parses an express app with', () => {
 
   it('regex path parameters', () => {
     app.post(/\/abc|\/xyz/, successResponse);
-    const parsed = parseExpressApp(app, middlewareName);
+    const parsed = parseExpressApp(app);
     const { path, method, pathParams } = parsed[0];
     expect(path).toBe('/\\/abc|\\/xyz/');
     expect(method).toBe('post');
@@ -205,7 +203,7 @@ describe('it parses an express app with', () => {
 
   it('array of path parameters', () => {
     app.get(['/abcd', '/xyza', /\/lmn|\/pqr/], successResponse);
-    const parsed = parseExpressApp(app, middlewareName);
+    const parsed = parseExpressApp(app);
     const { path, method, pathParams } = parsed[0];
     expect(path).toBe('/abcd,/xyza,/\\/lmn|\\/pqr/');
     expect(method).toBe('get');
@@ -216,7 +214,7 @@ describe('it parses an express app with', () => {
     app.get('/abc?d', successResponse);
     app.get('/ab*cd', successResponse);
     app.get('/a(bc)?d', successResponse);
-    const parsed = parseExpressApp(app, middlewareName);
+    const parsed = parseExpressApp(app);
     let { path, method, pathParams } = parsed[0];
     expect(path).toBe('/abc?d');
     expect(method).toBe('get');
@@ -236,7 +234,7 @@ describe('it parses an express app with', () => {
       .route('/test')
       .all((req, res, next) => next())
       .get(successResponse);
-    const parsed = parseExpressApp(app, middlewareName);
+    const parsed = parseExpressApp(app);
     const { path, method, pathParams } = parsed[0];
     expect(path).toBe('/test');
     expect(method).toBe('get');
@@ -246,7 +244,7 @@ describe('it parses an express app with', () => {
   it('path with middleware', () => {
     app.use((req, res, next) => next());
     app.get('/test', (req, res, next) => next(), successResponse);
-    const parsed = parseExpressApp(app, middlewareName);
+    const parsed = parseExpressApp(app);
     const { path, method, pathParams } = parsed[0];
     expect(path).toBe('/test');
     expect(method).toBe('get');
@@ -255,7 +253,7 @@ describe('it parses an express app with', () => {
 
   it('an openApiPath middleware path doc extraction', () => {
     app.get('/test', middleware({ operationId: 'test', operationObject }), successResponse);
-    const parsed = parseExpressApp(app, middlewareName);
+    const parsed = parseExpressApp(app);
     const { path, method, pathParams, metadata } = parsed[0];
     expect(path).toBe('/test');
     expect(method).toBe('get');
@@ -270,13 +268,13 @@ describe('it parses an express app with', () => {
       middleware({ operationId: 'test', operationObject }),
       successResponse,
     );
-    expect(() => parseExpressApp(app, middlewareName)[0].metadata).toThrow();
+    expect(() => parseExpressApp(app)[0].metadata).toThrow();
   });
 
   it('it doesnt pick up middleware on use routes', () => {
     app.use(middleware({ operationId: 'test', operationObject }));
     app.get('/test', middleware({ operationId: 'test', operationObject }), successResponse);
-    expect(parseExpressApp(app, middlewareName)[0].metadata).toEqual({ operationId: 'test', operationObject });
+    expect(parseExpressApp(app)[0].metadata).toEqual({ operationId: 'test', operationObject });
   });
 });
 
@@ -312,7 +310,7 @@ describe('parses an express app with ', () => {
     );
     router.use('/sub-route', subrouter);
     app.use('/test', router);
-    const parsed = parseExpressApp(app, middlewareName);
+    const parsed = parseExpressApp(app);
     const { path, method, pathParams, metadata } = parsed[0];
     expect(path).toBe('/test/sub-route/endpoint');
     expect(method).toBe('get');
