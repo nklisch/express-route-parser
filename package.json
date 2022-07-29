@@ -35,7 +35,9 @@
   ],
   "author": "Nathan Klisch",
   "license": "ISC",
-  "files": "lib/**/*",
+  "files": [
+    "lib/**/*"
+  ],
   "bugs": {
     "url": "https://github.com/nklisch/express-route-parser/issues"
   },
