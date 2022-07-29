@@ -76,7 +76,8 @@ import express, { RequestHandler, Request, Response, NextFunction } from 'expres
     // This parser can handle nested, complex router projects
     router.use('/:entity', subrouter);
     app.use('/dashboard', router);
-
+    
+    // You must parse your express app after you have added any and all routes in your app
     const parsed = parseExpressApp(app);
     console.log(parsed[0].pathParams);
     console.log(parsed[1].pathParams);
