@@ -1,6 +1,6 @@
 {
   "name": "express-route-parser",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "An Express plugin that can list the path and route endpoints of an Express app.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
