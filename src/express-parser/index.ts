@@ -8,9 +8,9 @@ import { Express, Router } from 'express';
 import { RouteMetaData, ExpressRegex, Key, Layer, Parameter, Route } from '../types';
 
 /**
+ * Parses an Express app and generates list of routes with meta data
  *
- * @param app
- * @param middlewareWrapper
+ * @param app The Express app reference. Must be used after all routes have been attached
  * @returns List of routes for this express app with meta-data that has been picked up
  */
 export const parseExpressApp = (app: Express): RouteMetaData[] => {
