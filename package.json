@@ -31,7 +31,11 @@
     "plugin",
     "parser",
     "metadata",
-    "reflection"
+    "reflection",
+    "list",
+    "path",
+    "routes",
+    "log"
   ],
   "author": "Nathan Klisch",
   "license": "ISC",
