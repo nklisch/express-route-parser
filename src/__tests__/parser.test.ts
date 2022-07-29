@@ -96,7 +96,7 @@ describe('mapKeysToPath: maps keys to path', () => {
     const optional = twoDynamicPaths();
     optional.regex = /^\/sub-sub-route(?:\/([^\/]+?))?\/(?:([^\/]+?))\/?(?=\/|$)/i as ExpressRegex;
     optional.keys[0].optional = true;
-    expect(onlyForTesting.mapKeysToPath(optional.regex, optional.keys)).toBe('/sub-sub-route/:test2?/:test3');
+    expect(onlyForTesting.mapKeysToPath(optional.regex, optional.keys)).toBe('/subb-sub-route/:test2?/:test3');
   });
 });
 
