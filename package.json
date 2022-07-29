@@ -7,7 +7,7 @@
   "scripts": {
     "test": "jest --collectCoverage --config jestconfig.json",
     "build": "tsc",
-    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint -c .eslintrc.js --ext .ts src",
     "lint-fix": "eslint -c .eslintrc.js --ext .ts src --fix",
     "prepare": "npm run build",
