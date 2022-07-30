@@ -37,6 +37,7 @@ export interface Parameter {
   in: string;
   name: string;
   required: boolean;
+  [key: string]: any;
 }
 
 export interface Key {
