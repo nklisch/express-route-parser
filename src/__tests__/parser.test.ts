@@ -355,4 +355,10 @@ describe('parses an express app with ', () => {
     ]);
     expect(method).toBe('put');
   });
+  it('single slash nested routes', () => {
+    app.use('/', router)
+    router.use('/', subrouter)
+    subrouter.get('/user', successResponse)
+    expect(parseExpressApp(app)).toEqual([{ path: '/user', method: 'get', pathParams: [] }])
+  })
 });
