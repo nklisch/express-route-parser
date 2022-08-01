@@ -69,7 +69,7 @@ class ExpressPathParser {
     if (filtered.length > 1) {
       throw new Error('Only one metadata middleware is allowed per route');
     }
-    const path = (basePath + layer.route.path).replace(/\/{2,}/gi, '/')
+    const path = (basePath + layer.route.path).replace(/\/{2,}/gi, '/');
     if (filtered.length === 0) {
       return { path, pathParams, method: lastRequestHandler.method };
     }
