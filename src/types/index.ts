@@ -27,7 +27,7 @@ export interface ExpressRegex extends RegExp {
 }
 
 export interface RouteMetaData {
-  path: string;
+  path: string | string[] | ExpressRegex;
   pathParams: Parameter[];
   method: string;
   metadata?: any;
