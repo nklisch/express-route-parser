@@ -150,3 +150,53 @@ app.get(
 );
 ```
 
+## Express 5 support
+
+`express-route-parser` works with Express 4 (since v1.0) and Express 5 (since v2.0). The same `parseExpressApp(app)` call works with either; the parser detects the version automatically.
+
+For Express 5, **import this package before constructing any routers**:
+
+```typescript
+// Top of your app entry point
+import { parseExpressApp } from 'express-route-parser';
+import express from 'express';                  // ← after our import
+
+const app = express();
+const router = express.Router();
+router.get('/users/:id', handler);
+app.use('/api', router);
+
+const routes = parseExpressApp(app);
+```
+
+Why: Express 5 stores mount paths only as compiled matcher closures; the original path string is unrecoverable after `Router.use(...)` returns. We patch `Router.prototype.use` and `.route` (auto-installed when this package is imported) to capture mount paths at registration time. The patch must be in place before any router is constructed.
+
+If your build sometimes constructs routers in modules imported before `express-route-parser`, set `EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT=1` and call `instrumentExpress5Router()` manually at the right time.
+
+### Express 5 path-syntax notes
+
+Express 5 uses `path-to-regexp@8`, which has different syntax than Express 4:
+
+| Express 4 | Express 5 |
+|---|---|
+| `/users/:id` | `/users/:id` (unchanged) |
+| `/users/:id?` | `/users{/:id}` |
+| `/files/*` | `/files/*splat` (named wildcard) |
+
+Migration is the consumer's job — Express 5 throws at registration time on the old syntax.
+
+### Extra parameter info on Express 5
+
+For routes parsed from an Express 5 app, each `Parameter` has a `type` field:
+
+```typescript
+interface Parameter {
+  name: string;
+  in: 'path';
+  required: boolean;
+  type?: 'param' | 'wildcard';   // present on v5 routes
+}
+```
+
+Express 4 routes don't populate `type` (the field is absent).
+
