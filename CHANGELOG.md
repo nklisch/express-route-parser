@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-05-03
+
 ### Added
 - `parseExpressApp(app, { multipleMetadata: true })` opt-in: returns `RouteMetaDataMulti[]`
   where `metadata` is always `any[]` (possibly empty). Default single-mode behavior unchanged;
@@ -23,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New exports: `renderRoutesAsHtml`, `HtmlRenderOptions`, `renderRoutesAsMarkdown`,
   `MarkdownRenderOptions`, `renderRoutesAsJson`, `JsonRenderOptions`.
 
+### Fixed
+- `parseExpressApp(app)` no longer crashes when called on an app with no routes registered.
+  The constructor previously fell back from `app._router` to `app.router`, which in Express 4
+  is a deprecated property that throws on access. Now correctly returns `[]` for routeless apps.
+
 ### Changed
 - Dev tooling: migrated from Jest 28 + ts-jest to Vitest 4 (faster, native TS, no transform config).
 - Dev tooling: TypeScript 4.7 → 6.0.
@@ -32,7 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Single-mode error message for multiple metadata now mentions `{ multipleMetadata: true }` opt-in.
 
 ### Added (dev)
-- Public API type tests (`src/__tests__/types.test-d.ts`) using Vitest's `expectTypeOf` to pin the shape of `parseExpressApp`, `RouteMetaData`, `Parameter`, `Key`, `ExpressRegex`, `Route`, `Layer`.
+- Public API type tests (`src/__tests__/types.test-d.ts`) using Vitest's `expectTypeOf` to pin the shape of `parseExpressApp`, `RouteMetaData`, `Parameter`, `Key`, `ExpressRegex`, `Route`, `Layer`, plus all new exports.
+- 15 additional behavior tests across HTTP methods, mount-path variations, empty-router handling, `router.param` handling, Markdown newline escaping, JSON array-path round-trip, and negative type tests for `withMetadata`. Coverage: 102 → 117 tests.
 
 ### Removed
 - Dead deps: `eslint-plugin-react` (unused), `eslint-plugin-prefer-arrow` (replaced with `eslint-plugin-prefer-arrow-functions`), `tslint-config-prettier` (TSLint dead).
@@ -57,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial published version covered by this changelog. See git history for prior changes.
 
-[Unreleased]: https://github.com/nklisch/express-route-parser/compare/v1.0.6...HEAD
+[Unreleased]: https://github.com/nklisch/express-route-parser/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/nklisch/express-route-parser/compare/v1.0.6...v1.1.0
 [1.0.6]: https://github.com/nklisch/express-route-parser/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/nklisch/express-route-parser/releases/tag/v1.0.5
