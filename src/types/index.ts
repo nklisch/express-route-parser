@@ -38,6 +38,16 @@ export interface Parameter {
   in: string;
   name: string;
   required: boolean;
+  /**
+   * The kind of path parameter, when known. Populated for routes parsed from
+   * Express 5 (which exposes path-to-regexp v8's typed `keys` array). Absent
+   * for Express 4 routes — the v4 regex-recovery path doesn't preserve this
+   * distinction.
+   *
+   * - `'param'` — a normal `:name` segment (one path component)
+   * - `'wildcard'` — a `*splat` segment (zero or more path components)
+   */
+  type?: 'param' | 'wildcard';
   [key: string]: any;
 }
 
