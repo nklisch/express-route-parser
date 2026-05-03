@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Dev tooling: migrated from Jest 28 + ts-jest to Vitest 4 (faster, native TS, no transform config).
+- Dev tooling: TypeScript 4.7 → 6.0.
+- Dev tooling: ESLint 8 (legacy `.eslintrc.js`) → ESLint 10 with flat config (`eslint.config.mjs`).
+- Dev tooling: Prettier 2 → 3 (config unchanged; format-stable).
+- `engines.node`: `>=18` → `>=20`. Required by Vitest 4 and ESLint 10 dev requirements; Node 18 reached end-of-maintenance April 2025.
+
+### Added
+- Public API type tests (`src/__tests__/types.test-d.ts`) using Vitest's `expectTypeOf` to pin the shape of `parseExpressApp`, `RouteMetaData`, `Parameter`, `Key`, `ExpressRegex`, `Route`, `Layer`.
+
+### Removed
+- Dead deps: `eslint-plugin-react` (unused), `eslint-plugin-prefer-arrow` (replaced with `eslint-plugin-prefer-arrow-functions`), `tslint-config-prettier` (TSLint dead).
+- Obsolete config files: `.eslintrc.js`, `tsconfig.eslint.json`, `jestconfig.json`.
+
 ## [1.0.6] - 2026-05-03
 
 ### Fixed
