@@ -1,10 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/naming-convention */
-
 import express, { Express, NextFunction, Request, Response, Router, RequestHandler } from 'express';
 import { onlyForTesting } from '../express-parser';
 import { parseExpressApp } from '../index';
