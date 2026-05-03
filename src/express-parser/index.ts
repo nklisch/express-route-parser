@@ -1,27 +1,45 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 
 import { Express, Router } from 'express';
-import { RouteMetaData, ExpressRegex, Key, Layer, Parameter, Route } from '../types';
+import { RouteMetaData, RouteMetaDataMulti, ParseOptions, ExpressRegex, Key, Layer, Parameter, Route } from '../types';
 
 /**
- * Parses an Express app and generates list of routes with meta data
+ * Parses an Express app and generates a list of routes with metadata.
  *
- * @param app The Express app reference. Must be used after all routes have been attached
- * @returns List of routes for this express app with meta-data that has been picked up
+ * @param app The Express app reference. Must be used after all routes have been attached.
+ * @param options Optional parse options. Pass `{ multipleMetadata: true }` to allow multiple
+ * metadata-bearing middlewares per route (returned as `metadata: any[]`).
+ * By default the parser throws if it encounters more than one metadata middleware
+ * on a route, matching v1.x behavior.
+ * @returns List of routes with metadata, in declaration order.
  */
-export const parseExpressApp = (app: Express): RouteMetaData[] => {
-  return new ExpressPathParser(app).appPaths;
-};
+export function parseExpressApp(app: Express, options?: { multipleMetadata?: false }): RouteMetaData[];
+export function parseExpressApp(app: Express, options: { multipleMetadata: true }): RouteMetaDataMulti[];
+export function parseExpressApp(app: Express, options: ParseOptions = {}): RouteMetaData[] | RouteMetaDataMulti[] {
+  const parser = new ExpressPathParser(app, options);
+  return parser.appPaths;
+}
 
 class ExpressPathParser {
-  private readonly _appPaths: RouteMetaData[];
-  public get appPaths() {
-    return this._appPaths;
+  private readonly _appPaths: (RouteMetaData | RouteMetaDataMulti)[];
+  private readonly _multipleMetadata: boolean;
+
+  public get appPaths(): RouteMetaData[] & RouteMetaDataMulti[] {
+    // The actual element shape matches whichever mode was selected; the
+    // overloads on parseExpressApp narrow it for callers.
+    return this._appPaths as RouteMetaData[] & RouteMetaDataMulti[];
   }
-  constructor(app: Express) {
+
+  constructor(app: Express, options: ParseOptions = {}) {
+    this._multipleMetadata = options.multipleMetadata === true;
     this._appPaths = [];
-    const router: Router = app._router || app.router;
+    // Express 4 lazy-initializes `_router` on first route registration. Before
+    // that, `_router` is undefined. Do NOT fall back to `app.router` — in
+    // Express 4 that's a deprecated accessor that throws on access (the 3.x→4.x
+    // migration left it as a tripwire). Just guard for undefined.
+    const router: Router | undefined = app._router;
     if (router) {
       router.stack.forEach((layer: Layer) => {
         this.traverse('', layer, []);
@@ -59,7 +77,7 @@ class ExpressPathParser {
    * @param basePath The base path as it was initial declared for this route
    * @returns A list of ExpressPath objects holding the meta data for each method on the route
    */
-  private parseRouteLayer = (layer: Layer, keys: Key[], basePath: string): RouteMetaData[] => {
+  private parseRouteLayer = (layer: Layer, keys: Key[], basePath: string): (RouteMetaData | RouteMetaDataMulti)[] => {
     const pathParams: Parameter[] = keys.map((key) => {
       return { name: key.name, in: 'path', required: !key.optional };
     });
@@ -81,21 +99,32 @@ class ExpressPathParser {
       }
     }
 
-    const results: RouteMetaData[] = [];
+    const results: (RouteMetaData | RouteMetaDataMulti)[] = [];
     for (const [method, entries] of methodGroups) {
       const metaEntries = entries.filter((element) => (element?.handle as Route)?.metadata);
-      if (metaEntries.length > 1) {
-        throw new Error('Only one metadata middleware is allowed per route');
-      }
-      if (metaEntries.length === 0) {
-        results.push({ path, pathParams, method });
+
+      if (this._multipleMetadata) {
+        // Multi mode: always emit `metadata: any[]` (possibly empty).
+        const metadata = metaEntries.map((e) => (e.handle as Route).metadata);
+        results.push({ path, pathParams, method, metadata });
       } else {
-        results.push({
-          path,
-          pathParams,
-          method,
-          metadata: (metaEntries[0].handle as Route).metadata,
-        });
+        // Single mode: existing v1.x behavior, with a friendlier error message.
+        if (metaEntries.length > 1) {
+          throw new Error(
+            'Only one metadata middleware is allowed per route. ' +
+              'Pass { multipleMetadata: true } to parseExpressApp() to allow multiple.',
+          );
+        }
+        if (metaEntries.length === 0) {
+          results.push({ path, pathParams, method });
+        } else {
+          results.push({
+            path,
+            pathParams,
+            method,
+            metadata: (metaEntries[0].handle as Route).metadata,
+          });
+        }
       }
     }
     return results;
