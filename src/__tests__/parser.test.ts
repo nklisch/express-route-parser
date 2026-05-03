@@ -239,6 +239,32 @@ describe('it parses an express app with', () => {
     expect(pathParams).toEqual([]);
   });
 
+  it('route pattern with multiple methods chained', () => {
+    // Regression test for https://github.com/josh-cain/express-route-parser/issues/7
+    const router = express.Router();
+    router.route('/hello').post(successResponse).get(successResponse);
+    app.use('/', router);
+    const parsed = parseExpressApp(app);
+    expect(parsed).toEqual([
+      { path: '/hello', method: 'post', pathParams: [] },
+      { path: '/hello', method: 'get', pathParams: [] },
+    ]);
+  });
+
+  it('route pattern with per-method metadata middleware', () => {
+    const router = express.Router();
+    router
+      .route('/hello')
+      .post(middleware({ operationId: 'createHello' }), successResponse)
+      .get(successResponse);
+    app.use('/', router);
+    const parsed = parseExpressApp(app);
+    expect(parsed).toEqual([
+      { path: '/hello', method: 'post', pathParams: [], metadata: { operationId: 'createHello' } },
+      { path: '/hello', method: 'get', pathParams: [] },
+    ]);
+  });
+
   it('path with middleware', () => {
     app.use((req, res, next) => next());
     app.get('/test', (req, res, next) => next(), successResponse);
