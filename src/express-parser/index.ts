@@ -50,35 +50,58 @@ class ExpressPathParser {
     if (!layer.route || !layer.route.stack.length) {
       return;
     }
-    this._appPaths.push(this.parseRouteLayer(layer, keys, path));
+    this._appPaths.push(...this.parseRouteLayer(layer, keys, path));
   };
   /**
-   * Parses a route object. Route objects are the leafs of an express router tree
+   * Parses a route object. Route objects are the leafs of an express router tree.
+   * Emits one RouteMetaData per distinct HTTP method registered on the route
+   * (e.g. `router.route('/x').post(...).get(...)` yields two entries).
    *
    * @param layer The layer of this route object - represents the stack of middleware and other meta data
    * @param keys The full set of keys for this particular route
    * @param basePath The base path as it was initial declared for this route
-   * @returns A ExpressPath object holding the meta data for a given route
+   * @returns A list of ExpressPath objects holding the meta data for each method on the route
    */
-  private parseRouteLayer = (layer: Layer, keys: Key[], basePath: string): RouteMetaData => {
-    const lastRequestHandler = layer.route.stack[layer.route.stack.length - 1];
+  private parseRouteLayer = (layer: Layer, keys: Key[], basePath: string): RouteMetaData[] => {
     const pathParams: Parameter[] = keys.map((key) => {
       return { name: key.name, in: 'path', required: !key.optional };
     });
-    const filtered = layer.route.stack.filter((element) => (element?.handle as Route)?.metadata);
-    if (filtered.length > 1) {
-      throw new Error('Only one metadata middleware is allowed per route');
-    }
     const path = (basePath + layer.route.path).replace(/\/{2,}/gi, '/');
-    if (filtered.length === 0) {
-      return { path, pathParams, method: lastRequestHandler.method };
+
+    // Group route stack entries by HTTP method. Express creates one stack entry
+    // per `.method(handler)` invocation, so multi-handler calls like
+    // `app.get('/x', mw, h)` produce multiple entries that share a method, while
+    // chained calls like `.post(...).get(...)` produce entries with different
+    // methods. `.all()` produces entries with method=undefined, which we skip.
+    const methodGroups = new Map<string, Layer[]>();
+    for (const entry of layer.route.stack) {
+      if (!entry.method) continue;
+      const group = methodGroups.get(entry.method);
+      if (group) {
+        group.push(entry);
+      } else {
+        methodGroups.set(entry.method, [entry]);
+      }
     }
-    return {
-      path,
-      pathParams,
-      method: lastRequestHandler.method,
-      metadata: (filtered[0].handle as Route).metadata,
-    };
+
+    const results: RouteMetaData[] = [];
+    for (const [method, entries] of methodGroups) {
+      const metaEntries = entries.filter((element) => (element?.handle as Route)?.metadata);
+      if (metaEntries.length > 1) {
+        throw new Error('Only one metadata middleware is allowed per route');
+      }
+      if (metaEntries.length === 0) {
+        results.push({ path, pathParams, method });
+      } else {
+        results.push({
+          path,
+          pathParams,
+          method,
+          metadata: (metaEntries[0].handle as Route).metadata,
+        });
+      }
+    }
+    return results;
   };
 }
 

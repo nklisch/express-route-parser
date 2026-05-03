@@ -1,6 +1,6 @@
 {
   "name": "express-route-parser",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "An Express plugin that can list the path and route endpoints of an Express app.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -14,7 +14,7 @@
     "prepublishOnly": "npm test && npm run lint",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push --follow-tags"
   },
   "repository": {
     "type": "git",
@@ -66,5 +66,8 @@
   "peerDependencies": {
     "@types/express": "^4.x",
     "express": "^4.x"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
