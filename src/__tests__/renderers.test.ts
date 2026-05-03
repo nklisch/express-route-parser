@@ -7,11 +7,7 @@ import type { AnyRouteMetaData } from '../renderers/serialize';
 import type { ExpressRegex } from '../types';
 
 // Helpers to build fixture routes
-const route = (
-  method: string,
-  path: string | string[] | ExpressRegex,
-  metadata?: unknown,
-): AnyRouteMetaData => ({
+const route = (method: string, path: string | string[] | ExpressRegex, metadata?: unknown): AnyRouteMetaData => ({
   method,
   path,
   pathParams: [],
