@@ -104,3 +104,49 @@ parsedApp =
     ]
 ```
 
+## Rendering routes
+
+Parsed routes can be rendered to HTML, Markdown, or pretty-printed JSON
+without any additional dependencies:
+
+```typescript
+import {
+  parseExpressApp,
+  renderRoutesAsHtml,
+  renderRoutesAsMarkdown,
+  renderRoutesAsJson,
+} from 'express-route-parser';
+
+const routes = parseExpressApp(app);
+
+const html = renderRoutesAsHtml(routes, { title: 'My API' });
+const md = renderRoutesAsMarkdown(routes);
+const json = renderRoutesAsJson(routes);
+```
+
+Each renderer accepts a `RouteMetaData[]` (single-metadata mode) or
+`RouteMetaDataMulti[]` (multi-metadata mode — see below).
+
+## Multiple metadata middlewares per route
+
+By default, the parser throws if a route has more than one metadata-bearing
+middleware. To allow multiple, pass `multipleMetadata: true`:
+
+```typescript
+const routes = parseExpressApp(app, { multipleMetadata: true });
+// → metadata is now `any[]` (possibly empty) on each route
+```
+
+The `withMetadata()` helper provides a typed alternative to the
+inline `const m: any = ...` pattern shown earlier:
+
+```typescript
+import { withMetadata } from 'express-route-parser';
+
+app.get(
+  '/users/:id',
+  withMetadata({ operationId: 'getUser', tags: ['users'] }),
+  realHandler,
+);
+```
+

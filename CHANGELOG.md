@@ -7,14 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `parseExpressApp(app, { multipleMetadata: true })` opt-in: returns `RouteMetaDataMulti[]`
+  where `metadata` is always `any[]` (possibly empty). Default single-mode behavior unchanged;
+  throws on multiple metadata with a friendlier error that mentions the opt-in. Closes #6.
+- `withMetadata<M>(meta)` helper: returns a no-op `RequestHandler` with `metadata: M`
+  attached. Typed alternative to the README's inline `const m: any = ...` cast pattern. Closes #6.
+- New exports: `withMetadata`, `ParseOptions`, `RouteMetaDataMulti`, `MetadataHandler`.
+- `renderRoutesAsHtml(routes, { title? })`: self-contained HTML document with inline CSS,
+  method-colored badges, and collapsible metadata via `<details>`. No external resources. Closes #5.
+- `renderRoutesAsMarkdown(routes, { title? })`: GFM-compatible Markdown table; short metadata
+  inline-coded, long metadata in a `<details>`/`<pre>` block. Closes #5.
+- `renderRoutesAsJson(routes, { indent? })`: pretty-printed JSON; RegExp paths serialized as
+  their string form rather than `{}`. Closes #5.
+- New exports: `renderRoutesAsHtml`, `HtmlRenderOptions`, `renderRoutesAsMarkdown`,
+  `MarkdownRenderOptions`, `renderRoutesAsJson`, `JsonRenderOptions`.
+
 ### Changed
 - Dev tooling: migrated from Jest 28 + ts-jest to Vitest 4 (faster, native TS, no transform config).
 - Dev tooling: TypeScript 4.7 → 6.0.
 - Dev tooling: ESLint 8 (legacy `.eslintrc.js`) → ESLint 10 with flat config (`eslint.config.mjs`).
 - Dev tooling: Prettier 2 → 3 (config unchanged; format-stable).
 - `engines.node`: `>=18` → `>=20`. Required by Vitest 4 and ESLint 10 dev requirements; Node 18 reached end-of-maintenance April 2025.
+- Single-mode error message for multiple metadata now mentions `{ multipleMetadata: true }` opt-in.
 
-### Added
+### Added (dev)
 - Public API type tests (`src/__tests__/types.test-d.ts`) using Vitest's `expectTypeOf` to pin the shape of `parseExpressApp`, `RouteMetaData`, `Parameter`, `Key`, `ExpressRegex`, `Route`, `Layer`.
 
 ### Removed
