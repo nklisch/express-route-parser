@@ -46,8 +46,7 @@ Before the workflow can succeed, the maintainer must:
 2. Navigate to the `express-route-parser` package settings → Publishing access →
    Trusted publishers.
 3. Add a GitHub Actions trusted publisher with these exact values:
-   - **Organization or user**: `nklisch` *(verify this — the package was published by
-     this account; if ownership has moved, use the current owner's username/org)*
+   - **Organization or user**: `nklisch`
    - **Repository**: `express-route-parser`
    - **Workflow filename**: `release.yml`
    - **Environment name**: leave empty (no GitHub environment will be used in this
@@ -349,9 +348,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial published version covered by this changelog. See git history for prior changes.
 
-[Unreleased]: https://github.com/josh-cain/express-route-parser/compare/v1.0.6...HEAD
-[1.0.6]: https://github.com/josh-cain/express-route-parser/compare/v1.0.5...v1.0.6
-[1.0.5]: https://github.com/josh-cain/express-route-parser/releases/tag/v1.0.5
+[Unreleased]: https://github.com/nklisch/express-route-parser/compare/v1.0.6...HEAD
+[1.0.6]: https://github.com/nklisch/express-route-parser/compare/v1.0.5...v1.0.6
+[1.0.5]: https://github.com/nklisch/express-route-parser/releases/tag/v1.0.5
 ```
 
 **Implementation Notes**:
@@ -360,11 +359,8 @@ Initial published version covered by this changelog. See git history for prior c
   `YYYY-MM-DD` placeholder is filled in at release time.
 - The "Keep a Changelog" sections (Added/Changed/Deprecated/Removed/Fixed/Security)
   are conventional. Use only the ones that apply per release.
-- Compare-link footnotes use the `josh-cain/express-route-parser` repo URL — the
-  package's `repository.url` in `package.json` currently points at
-  `nklisch/express-route-parser`, but the active remote in this checkout is
-  `josh-cain/express-route-parser`. **Resolve which is canonical** before merging
-  this design — see "Open Question" below.
+- Compare-link footnotes use the canonical `nklisch/express-route-parser` repo URL,
+  matching both `package.json` `repository.url` and the active git remote.
 - The CHANGELOG is hand-maintained. PRs that ship user-visible changes should
   update the `[Unreleased]` section. The `npm version` step transitions
   `[Unreleased]` to a numbered entry — this is currently manual but could be
@@ -397,7 +393,7 @@ The npmjs.com trusted publisher must be configured once per package. Required va
 | Field          | Value                                  |
 | -------------- | -------------------------------------- |
 | Provider       | GitHub Actions                         |
-| Org or user    | `<repo owner>`                         |
+| Org or user    | `nklisch`                              |
 | Repository     | `express-route-parser`                 |
 | Workflow file  | `release.yml`                          |
 | Environment    | (leave empty)                          |
@@ -462,18 +458,7 @@ the tag is already pushed, re-run via:
 These need resolution before implementation. Each is a real fork in the road, not a
 nit.
 
-### Q1: Which repo is canonical?
-
-`package.json` `repository.url` says `nklisch/express-route-parser`, but the active
-git remote in this checkout is `josh-cain/express-route-parser` and that's where the
-issues and PR #8 live. The trusted publisher must be configured under whichever
-GitHub org/user **actually pushes the tag**. If both repos are intended to publish,
-two trusted-publisher entries are needed.
-
-**Action**: confirm the canonical repo before configuring trusted publishing on
-npmjs.com. Update `package.json` `repository.url` to match.
-
-### Q2: Should we use a GitHub Environment for the publish job?
+### Q1: Should we use a GitHub Environment for the publish job?
 
 A GitHub Environment with a required reviewer would force a human approval step
 between tag-push and `npm publish` running. This is a hardening option used by
@@ -486,7 +471,7 @@ mistake-publishes become a problem. If added, the environment name must be
 declared *both* in the workflow `jobs.publish-npm.environment` field *and* on the
 npmjs.com trusted publisher configuration — they must match exactly.
 
-### Q3: Drop `prepublishOnly` lifecycle hook?
+### Q2: Drop `prepublishOnly` lifecycle hook?
 
 Now that CI runs test+lint before publish, the `prepublishOnly` script is
 redundant in the happy path. Removing it makes `npm publish` faster locally
