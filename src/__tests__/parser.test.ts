@@ -2,6 +2,7 @@ import express, { Express, NextFunction, Request, Response, Router, RequestHandl
 import { onlyForTesting } from '../express-parser';
 import { parseExpressApp } from '../index';
 import { ExpressRegex } from '../index';
+import { withMetadata } from '../with-metadata';
 
 const staticPath = /^\/sub-route2\/?(?=\/|$)/i as ExpressRegex;
 const oneDynamicPath = () => {
@@ -292,6 +293,59 @@ describe('it parses an express app with', () => {
     app.use(middleware({ operationId: 'test', operationObject }));
     app.get('/test', middleware({ operationId: 'test', operationObject }), successResponse);
     expect(parseExpressApp(app)[0].metadata).toEqual({ operationId: 'test', operationObject });
+  });
+});
+
+describe('parseExpressApp multi-metadata mode', () => {
+  let app: Express;
+  const successResponse: RequestHandler = (req: Request, res: Response) => {
+    res.status(204).send();
+  };
+  beforeEach(() => {
+    app = express();
+  });
+
+  it('returns array-form metadata when opted in with two metadata middlewares', () => {
+    app.get('/x', withMetadata({ a: 1 }), withMetadata({ b: 2 }), successResponse);
+    const parsed = parseExpressApp(app, { multipleMetadata: true });
+    expect(parsed[0].metadata).toEqual([{ a: 1 }, { b: 2 }]);
+  });
+
+  it('returns empty array for routes with no metadata in multi mode', () => {
+    app.get('/x', successResponse);
+    const parsed = parseExpressApp(app, { multipleMetadata: true });
+    expect(parsed[0].metadata).toEqual([]);
+  });
+
+  it('returns single-element array for routes with one metadata middleware in multi mode', () => {
+    app.get('/x', withMetadata({ op: 'getX' }), successResponse);
+    const parsed = parseExpressApp(app, { multipleMetadata: true });
+    expect(parsed[0].metadata).toEqual([{ op: 'getX' }]);
+  });
+
+  it('throws by default on multiple metadata, with helpful message mentioning multipleMetadata: true', () => {
+    app.get('/x', withMetadata({ a: 1 }), withMetadata({ b: 2 }), successResponse);
+    expect(() => parseExpressApp(app)).toThrow(/multipleMetadata: true/);
+  });
+
+  it('preserves declaration order in multi mode', () => {
+    app.get('/x', withMetadata({ order: 1 }), withMetadata({ order: 2 }), withMetadata({ order: 3 }), successResponse);
+    const parsed = parseExpressApp(app, { multipleMetadata: true });
+    expect(parsed[0].metadata).toEqual([{ order: 1 }, { order: 2 }, { order: 3 }]);
+  });
+
+  it('does not throw for multiple metadata when multipleMetadata: true', () => {
+    app.get('/x', withMetadata({ a: 1 }), withMetadata({ b: 2 }), successResponse);
+    expect(() => parseExpressApp(app, { multipleMetadata: true })).not.toThrow();
+  });
+
+  it('returns RouteMetaDataMulti[] with correct path and pathParams in multi mode', () => {
+    app.get('/users/:id', withMetadata({ op: 'getUser' }), successResponse);
+    const parsed = parseExpressApp(app, { multipleMetadata: true });
+    expect(parsed[0].path).toBe('/users/:id');
+    expect(parsed[0].pathParams).toEqual([{ name: 'id', in: 'path', required: true }]);
+    expect(parsed[0].method).toBe('get');
+    expect(parsed[0].metadata).toEqual([{ op: 'getUser' }]);
   });
 });
 
