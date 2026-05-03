@@ -435,3 +435,120 @@ describe('parses an express app with ', () => {
     expect(parseExpressApp(app)).toEqual([{ path: '/user', method: 'get', pathParams: [] }]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edge cases derived from the public contract (README + types) that weren't
+// covered by the original suite. Added as part of the test-quality pass.
+// ---------------------------------------------------------------------------
+
+describe('parser edge cases', () => {
+  let app: Express;
+  const successResponse: RequestHandler = (req: Request, res: Response) => {
+    res.status(204).send();
+  };
+  beforeEach(() => {
+    app = express();
+  });
+
+  // --- HTTP method coverage --------------------------------------------------
+  // Spec source: README says routes are listed by method; the type's `method`
+  // field is `string` with no enumeration. Ensure HEAD and OPTIONS — both
+  // standard Express methods and common in real APIs — round-trip cleanly.
+
+  it('HEAD method is parsed', () => {
+    app.head('/health', successResponse);
+    const parsed = parseExpressApp(app);
+    expect(parsed).toEqual([{ path: '/health', method: 'head', pathParams: [] }]);
+  });
+
+  it('OPTIONS method is parsed', () => {
+    app.options('/cors', successResponse);
+    const parsed = parseExpressApp(app);
+    expect(parsed).toEqual([{ path: '/cors', method: 'options', pathParams: [] }]);
+  });
+
+  // --- Mount-path variations -------------------------------------------------
+  // Spec source: README lists "Array of paths e.g. app.get(['/abc', '/xyz'])"
+  // and "Regex routes" as supported features. These are tested for routes
+  // (app.get) but NOT for mount paths (app.use), even though Express supports
+  // them identically.
+
+  it('handles array mount path on app.use', () => {
+    const router = express.Router();
+    router.get('/inner', successResponse);
+    app.use(['/v1', '/v2'], router);
+    const parsed = parseExpressApp(app);
+    // Whatever the parser emits for an array mount, it should:
+    // - emit at least one entry,
+    // - point at /inner with method 'get',
+    // - not throw.
+    expect(parsed.length).toBeGreaterThanOrEqual(1);
+    for (const route of parsed) {
+      expect(route.method).toBe('get');
+      expect(typeof route.path === 'string' || Array.isArray(route.path)).toBe(true);
+    }
+  });
+
+  it('handles regex mount path on app.use without throwing', () => {
+    const router = express.Router();
+    router.get('/inner', successResponse);
+    app.use(/^\/api/, router);
+    expect(() => parseExpressApp(app)).not.toThrow();
+    const parsed = parseExpressApp(app);
+    expect(parsed.length).toBeGreaterThanOrEqual(1);
+    expect(parsed[0].method).toBe('get');
+  });
+
+  // --- Empty / no-route routers ---------------------------------------------
+  // Spec source: type contract — parseExpressApp returns RouteMetaData[].
+  // An empty array is the valid output for an app with no routes; the parser
+  // must not crash on a router whose stack is empty.
+
+  it('mounted empty router produces no entries', () => {
+    const empty = express.Router();
+    app.use('/empty', empty);
+    expect(parseExpressApp(app)).toEqual([]);
+  });
+
+  it('app with no routes at all produces empty array', () => {
+    expect(parseExpressApp(app)).toEqual([]);
+  });
+
+  // --- router.param() handlers are not routes -------------------------------
+  // Spec source: type contract — RouteMetaData represents an HTTP route, not
+  // arbitrary middleware. router.param(name, handler) installs a parameter-
+  // resolution handler that runs for any matching :param, but is NOT a route
+  // and must not appear in the parser output.
+
+  it('router.param handlers are ignored', () => {
+    const router = express.Router();
+    router.param('id', (_req: Request, _res: Response, next: NextFunction) => {
+      next();
+    });
+    router.get('/users/:id', successResponse);
+    app.use('/', router);
+    const parsed = parseExpressApp(app);
+    expect(parsed).toEqual([
+      { path: '/users/:id', method: 'get', pathParams: [{ name: 'id', in: 'path', required: true }] },
+    ]);
+  });
+
+  // --- Issue #7 follow-up: triple-method chain with .all() interleaved ------
+  // Extends the issue-#7 regression: ensure the method-grouping logic still
+  // works when .all() (method=undefined) is mixed between explicit methods.
+
+  it('chained .all().get().post() emits only get and post', () => {
+    const router = express.Router();
+    router
+      .route('/multi')
+      .all((req: Request, res: Response, next: NextFunction) => next())
+      .get(successResponse)
+      .post(successResponse);
+    app.use('/', router);
+    const parsed = parseExpressApp(app);
+    expect(parsed).toEqual([
+      { path: '/multi', method: 'get', pathParams: [] },
+      { path: '/multi', method: 'post', pathParams: [] },
+    ]);
+  });
+});

@@ -267,4 +267,60 @@ describe('renderRoutesAsJson', () => {
     const parsed = JSON.parse(renderRoutesAsJson([r]));
     expect(parsed[0].metadata).toEqual([{ a: 1 }, { b: 2 }]);
   });
+
+  // Gap (MEDIUM): array-form path round-trip. Source: design Unit B4 AC,
+  // "round-trips: parsed routes serialized then JSON-parsed equals the input".
+  // Array paths (RouteMetaData['path']: string[]) come from app.get(['/a','/b']).
+  it('preserves array-form path through JSON', () => {
+    const r: AnyRouteMetaData = {
+      method: 'get',
+      path: ['/foo', '/bar'],
+      pathParams: [],
+    };
+    const json = renderRoutesAsJson([r]);
+    const parsed = JSON.parse(json);
+    expect(parsed[0].path).toEqual(['/foo', '/bar']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Gap (MEDIUM): newline handling in Markdown cells. Source: design Unit B3
+// implementation note ("`escapePipe` ... Newlines are converted to `<br>`
+// since GFM tables don't allow literal newlines in cells").
+// ---------------------------------------------------------------------------
+
+describe('renderRoutesAsMarkdown — newline handling', () => {
+  it('escapes newlines in path cells to <br>', () => {
+    const r: AnyRouteMetaData = {
+      method: 'get',
+      // Pathologically build a path with a newline. Real-world routes don't
+      // contain newlines, but the rendered output should remain a valid
+      // single-line table cell either way.
+      path: '/foo\n/bar',
+      pathParams: [],
+    };
+    const md = renderRoutesAsMarkdown([r]);
+    // The cell should contain <br> in place of the literal newline.
+    // The literal newline must NOT appear inside the table row (each row is
+    // a single line).
+    const tableLine = md.split('\n').find((line) => line.includes('/foo'));
+    expect(tableLine).toBeDefined();
+    expect(tableLine).toContain('<br>');
+    expect(tableLine).toContain('/bar');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Re-export coverage check (renderers/serialize) — exercised by other tests
+// already, but call out directly so a regression is obvious.
+// ---------------------------------------------------------------------------
+
+describe('renderers/serialize public surface', () => {
+  it('pathToString and metadataToString are exported and exercised', () => {
+    // Already exercised by all three renderers; this asserts the imports
+    // work as a smoke check (the import at the top of this file would fail
+    // type-check otherwise).
+    expect(typeof pathToString).toBe('function');
+    expect(typeof metadataToString).toBe('function');
+  });
 });

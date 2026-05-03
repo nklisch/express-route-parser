@@ -9,6 +9,9 @@ import type {
   RouteMetaDataMulti,
   ParseOptions,
   MetadataHandler,
+  HtmlRenderOptions,
+  MarkdownRenderOptions,
+  JsonRenderOptions,
 } from '../index';
 import { parseExpressApp, withMetadata } from '../index';
 import type { Express } from 'express';
@@ -125,5 +128,55 @@ describe('issue #5 renderer type contract', () => {
   it('renderRoutesAsJson accepts RouteMetaData[] and returns string', () => {
     expectTypeOf<typeof renderRoutesAsJson>().parameter(0).toEqualTypeOf<RouteMetaData[] | RouteMetaDataMulti[]>();
     expectTypeOf<typeof renderRoutesAsJson>().returns.toEqualTypeOf<string>();
+  });
+
+  // Gap (LOW): RenderOptions shapes were not pinned. Source: design Unit B5 AC,
+  // "`import type { HtmlRenderOptions, MarkdownRenderOptions, JsonRenderOptions }
+  //  from 'express-route-parser'` resolves."
+  it('HtmlRenderOptions has the documented shape', () => {
+    expectTypeOf<HtmlRenderOptions>().toMatchObjectType<{
+      title?: string;
+    }>();
+  });
+
+  it('MarkdownRenderOptions has the documented shape', () => {
+    expectTypeOf<MarkdownRenderOptions>().toMatchObjectType<{
+      title?: string;
+    }>();
+  });
+
+  it('JsonRenderOptions has the documented shape', () => {
+    expectTypeOf<JsonRenderOptions>().toMatchObjectType<{
+      indent?: number;
+    }>();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Gap (HIGH): withMetadata<M> compile-time rejection. Source: design Unit A2 AC,
+// "withMetadata<MySchema>({ ... }) rejects an input that doesn't match MySchema
+// at compile time." The positive case is covered by `types.test-d.ts:99`; the
+// negative case (the actual contract — rejection) was missing.
+// ---------------------------------------------------------------------------
+
+describe('withMetadata negative type tests', () => {
+  it('rejects metadata that does not match the explicit type parameter', () => {
+    type ExpectedMeta = { operationId: string; tags: string[] };
+
+    // Positive case (sanity): correct shape resolves.
+    const ok = withMetadata<ExpectedMeta>({ operationId: 'getX', tags: ['users'] });
+    expectTypeOf(ok.metadata).toEqualTypeOf<ExpectedMeta>();
+
+    // Negative case: missing required field.
+    // @ts-expect-error - missing 'tags' field
+    withMetadata<ExpectedMeta>({ operationId: 'getX' });
+
+    // Negative case: wrong type for a field.
+    // @ts-expect-error - 'operationId' should be string, got number
+    withMetadata<ExpectedMeta>({ operationId: 42, tags: [] });
+
+    // Negative case: extra unknown field (excess-property check).
+    // @ts-expect-error - 'unknownField' is not declared on ExpectedMeta
+    withMetadata<ExpectedMeta>({ operationId: 'x', tags: [], unknownField: true });
   });
 });

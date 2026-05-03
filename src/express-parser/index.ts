@@ -35,7 +35,11 @@ class ExpressPathParser {
   constructor(app: Express, options: ParseOptions = {}) {
     this._multipleMetadata = options.multipleMetadata === true;
     this._appPaths = [];
-    const router: Router = app._router || app.router;
+    // Express 4 lazy-initializes `_router` on first route registration. Before
+    // that, `_router` is undefined. Do NOT fall back to `app.router` — in
+    // Express 4 that's a deprecated accessor that throws on access (the 3.x→4.x
+    // migration left it as a tripwire). Just guard for undefined.
+    const router: Router | undefined = app._router;
     if (router) {
       router.stack.forEach((layer: Layer) => {
         this.traverse('', layer, []);
