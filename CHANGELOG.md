@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.6] - YYYY-MM-DD
+## [1.0.6] - 2026-05-03
 
 ### Fixed
 - `Router#route` chained handlers (e.g. `.post(...).get(...)`) now produce one
