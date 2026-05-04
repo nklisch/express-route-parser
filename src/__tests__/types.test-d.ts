@@ -153,6 +153,25 @@ describe('issue #5 renderer type contract', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Express 5 type extensions
+// ---------------------------------------------------------------------------
+
+describe('Express 5 type extensions', () => {
+  it('Parameter.type accepts the documented union or undefined', () => {
+    type T = Parameter['type'];
+    expectTypeOf<T>().toEqualTypeOf<'param' | 'wildcard' | undefined>();
+  });
+
+  it('Existing Parameter shape with new field still satisfies toMatchObjectType', () => {
+    expectTypeOf<Parameter>().toMatchObjectType<{
+      in: string;
+      name: string;
+      required: boolean;
+    }>();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Gap (HIGH): withMetadata<M> compile-time rejection. Source: design Unit A2 AC,
 // "withMetadata<MySchema>({ ... }) rejects an input that doesn't match MySchema
 // at compile time." The positive case is covered by `types.test-d.ts:99`; the

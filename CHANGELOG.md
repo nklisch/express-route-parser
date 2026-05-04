@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Express 5 support.** `parseExpressApp(app)` auto-detects Express 4 vs Express 5 and dispatches to
+  the appropriate parser. New `Parameter.type` field surfaces path-to-regexp v8's `'param'` vs
+  `'wildcard'` distinction for v5 routes.
+- Auto-installed `Router.prototype` patch on package import captures mount paths for Express 5
+  (necessary because Express 5 discards the path string at Layer construction). Idempotent; no-op
+  on Express 4-only deployments. Disable via `EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT=1`.
+- New export: `instrumentExpress5Router()` for users who need to defer instrumentation.
+
+### Fixed
+- **Express 5 nested-router `pathParams` now accumulate ancestor params**, matching Express 4
+  behavior. Previously, `app.use('/api/:v', router); router.get('/users/:id', h)` reported only
+  `:id`; now reports `:v` and `:id`. Closes a regression vs the v4 parser's existing semantics.
+
+### Changed
+- **BREAKING (peer dep widening): `peerDependencies.express` is now `^4.x || ^5.x`** (was `^4.x`).
+  Existing v1.x consumers on Express 4 are unaffected; Express 5 consumers can now install.
+  Same widening for `@types/express`.
+- Express 5 optional-segment detection switched from a regex heuristic on the raw path string to
+  path-to-regexp v8's public `parse()` AST. `Group` tokens (`{...}`) are now the structural source
+  of optionality. Same observable behavior on documented forms; more robust on uncommon ones.
+- Internal restructure: parser body split into `src/express-parser/v4.ts`,
+  `src/express-parser/v5.ts`, and a thin dispatcher in `src/express-parser/index.ts`.
+  Public API surface unchanged.
+
+### Added (dev)
+- E2E test suite for the v5 surface (`docs/design/express-5-test-suite.md`): renderer integration
+  with real v5-parsed routes, README v5 example pin, cross-version (v4 + v5 in same process),
+  live HTTP smoke (boots a real v5 server, fetches each parsed route), import-order tests
+  (working + broken via sub-process fixtures), idempotent instrument, error middleware / 404
+  catchall / `router.param()` skipping, same-prefix mounts, all HTTP methods. Coverage:
+  117 → 173 tests.
+- Sub-process test fixtures live in `src/__tests__/fixtures/` (`.cjs`, exempt from eslint and
+  tsconfig).
+
 ## [1.1.0] - 2026-05-03
 
 ### Added

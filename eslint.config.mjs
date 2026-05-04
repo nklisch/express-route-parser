@@ -12,7 +12,10 @@ import prettierConfig from 'eslint-config-prettier';
 export default tseslint.config(
   // Ignore patterns (replaces .eslintignore)
   {
-    ignores: ['lib/**', 'coverage/**', 'node_modules/**'],
+    // .cjs fixtures live under src/__tests__/fixtures/ and are loaded by
+    // sub-process tests against the compiled lib. They aren't TypeScript and
+    // aren't covered by tsconfig, so the type-checked linter chokes on them.
+    ignores: ['lib/**', 'coverage/**', 'node_modules/**', 'src/**/fixtures/**'],
   },
 
   // Base recommended configs
@@ -33,6 +36,9 @@ export default tseslint.config(
           // guard enforced by typescript-eslint. Tests live directly in src/__tests/,
           // not nested deeper, so a shallow pattern is exact and fast.
           allowDefaultProject: ['src/__tests__/*.ts'],
+          // The default cap is 8; we now have more test files than that. Raise
+          // the limit to accommodate the full suite without disabling the guard.
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20,
         },
         tsconfigRootDir: import.meta.dirname,
       },
