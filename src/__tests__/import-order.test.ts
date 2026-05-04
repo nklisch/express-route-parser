@@ -31,20 +31,12 @@ describe('import order — v5 sub-router patch timing', () => {
   }, 60_000);
 
   it('G8: lib required before user-routes module — parse succeeds', () => {
-    const out = execFileSync(
-      process.execPath,
-      [path.join(FIXTURE_DIR, 'import-order-good.cjs')],
-      { encoding: 'utf8' },
-    );
+    const out = execFileSync(process.execPath, [path.join(FIXTURE_DIR, 'import-order-good.cjs')], { encoding: 'utf8' });
     expect(out.trim()).toBe('OK: /api/:tenant/x');
   });
 
   it('A1: user-routes module required before lib — parse throws actionable error', () => {
-    const out = execFileSync(
-      process.execPath,
-      [path.join(FIXTURE_DIR, 'import-order-bad.cjs')],
-      { encoding: 'utf8' },
-    );
+    const out = execFileSync(process.execPath, [path.join(FIXTURE_DIR, 'import-order-bad.cjs')], { encoding: 'utf8' });
     expect(out).toMatch(/^THREW: /);
     expect(out).toMatch(/sub-router was constructed before instrumentation/);
   });

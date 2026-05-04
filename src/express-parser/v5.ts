@@ -11,10 +11,7 @@ import { ORIGINAL_PATH } from './instrument';
  * accumulate parameters across nested mounts so the leaf route reports its
  * full ancestor chain, matching v4 behavior.
  */
-export const parseV5 = (
-  router: V5RouterStack,
-  options: ParseOptions,
-): RouteMetaData[] | RouteMetaDataMulti[] => {
+export const parseV5 = (router: V5RouterStack, options: ParseOptions): RouteMetaData[] | RouteMetaDataMulti[] => {
   const out: (RouteMetaData | RouteMetaDataMulti)[] = [];
   walkStack(router.stack, '', [], out, options.multipleMetadata === true);
   return out;
@@ -40,8 +37,7 @@ const walkStack = (
             'Import `express-route-parser` (or call `instrumentExpress5Router()`) before creating any routers.',
         );
       }
-      const newParent =
-        mountPath !== undefined ? joinPath(parent, mountPathToString(mountPath)) : parent;
+      const newParent = mountPath !== undefined ? joinPath(parent, mountPathToString(mountPath)) : parent;
       // Only string mount paths can carry path-to-regexp params. Regex and
       // array mount forms have no named segments — skip them silently.
       const segmentParams = typeof mountPath === 'string' ? extractParameters(mountPath) : [];
@@ -139,11 +135,7 @@ const extractParameters = (path: string | RegExp | (string | RegExp)[]): Paramet
   return out;
 };
 
-const walkTokens = (
-  tokens: import('path-to-regexp').Token[],
-  inGroup: boolean,
-  out: Parameter[],
-): void => {
+const walkTokens = (tokens: import('path-to-regexp').Token[], inGroup: boolean, out: Parameter[]): void => {
   for (const t of tokens) {
     if (t.type === 'param' || t.type === 'wildcard') {
       out.push({

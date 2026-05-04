@@ -34,27 +34,19 @@ describe('EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT escape hatch', () => {
   }, 60_000);
 
   it('skips the auto-patch; v5 sub-router parse throws the expected error', () => {
-    const out = execFileSync(
-      process.execPath,
-      [path.join(FIXTURE_DIR, 'no-auto-instrument.cjs')],
-      {
-        env: { ...process.env, EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT: '1' },
-        encoding: 'utf8',
-      },
-    );
+    const out = execFileSync(process.execPath, [path.join(FIXTURE_DIR, 'no-auto-instrument.cjs')], {
+      env: { ...process.env, EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT: '1' },
+      encoding: 'utf8',
+    });
     expect(out).toMatch(/^THREW: /);
     expect(out).toMatch(/sub-router was constructed before instrumentation/);
   });
 
   it('manual instrumentExpress5Router() before router construction restores parsing', () => {
-    const out = execFileSync(
-      process.execPath,
-      [path.join(FIXTURE_DIR, 'manual-instrument.cjs')],
-      {
-        env: { ...process.env, EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT: '1' },
-        encoding: 'utf8',
-      },
-    );
+    const out = execFileSync(process.execPath, [path.join(FIXTURE_DIR, 'manual-instrument.cjs')], {
+      env: { ...process.env, EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT: '1' },
+      encoding: 'utf8',
+    });
     expect(out.trim()).toBe('OK: /api/:tenant/x');
   });
 });

@@ -17,18 +17,10 @@ describe('README v5 example', () => {
     };
 
     // Top-level route with metadata (mirrors the v4 example shape)
-    app.get(
-      '/resources/users/:id',
-      withMetadata({ operationId: 'getUserById', notes: 'These are some notes' }),
-      ok,
-    );
+    app.get('/resources/users/:id', withMetadata({ operationId: 'getUserById', notes: 'These are some notes' }), ok);
 
     // Nested sub-router with metadata on the leaf route
-    subrouter.get(
-      '/:resourceId',
-      withMetadata({ operationId: 'getResourceByEntity', hidden: true, schema: {} }),
-      ok,
-    );
+    subrouter.get('/:resourceId', withMetadata({ operationId: 'getResourceByEntity', hidden: true, schema: {} }), ok);
     router.use('/:entity', subrouter);
     app.use('/dashboard', router);
 

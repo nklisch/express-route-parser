@@ -92,14 +92,8 @@ describe('G6: HTTP smoke — every parsed route responds 2xx on its substituted 
       if (method === 'HEAD' || method === 'OPTIONS') continue;
 
       const res = await fetch(url, { method });
-      expect(
-        res.status,
-        `Expected 2xx for ${method} ${urlPath} but got ${res.status}`,
-      ).toBeGreaterThanOrEqual(200);
-      expect(
-        res.status,
-        `Expected 2xx for ${method} ${urlPath} but got ${res.status}`,
-      ).toBeLessThan(300);
+      expect(res.status, `Expected 2xx for ${method} ${urlPath} but got ${res.status}`).toBeGreaterThanOrEqual(200);
+      expect(res.status, `Expected 2xx for ${method} ${urlPath} but got ${res.status}`).toBeLessThan(300);
     }
   });
 });

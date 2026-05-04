@@ -23,18 +23,14 @@ describe('Express 5 parser', () => {
 
   it('parses a single top-level route', () => {
     app.get('/health', ok);
-    expect(parseExpressApp(app)).toEqual([
-      { path: '/health', method: 'get', pathParams: [] },
-    ]);
+    expect(parseExpressApp(app)).toEqual([{ path: '/health', method: 'get', pathParams: [] }]);
   });
 
   it('extracts a required path parameter with type info', () => {
     app.get('/users/:id', ok);
     const [route] = parseExpressApp(app);
     expect(route.path).toBe('/users/:id');
-    expect(route.pathParams).toEqual([
-      { name: 'id', in: 'path', required: true, type: 'param' },
-    ]);
+    expect(route.pathParams).toEqual([{ name: 'id', in: 'path', required: true, type: 'param' }]);
   });
 
   it('parses an optional segment using v5 syntax {:name}', () => {
@@ -48,9 +44,7 @@ describe('Express 5 parser', () => {
   it('parses a wildcard segment as type "wildcard"', () => {
     app.get('/files/*splat', ok);
     const [route] = parseExpressApp(app);
-    expect(route.pathParams).toEqual([
-      { name: 'splat', in: 'path', required: false, type: 'wildcard' },
-    ]);
+    expect(route.pathParams).toEqual([{ name: 'splat', in: 'path', required: false, type: 'wildcard' }]);
   });
 
   it('parses nested sub-routers, joins mount paths, accumulates ancestor params', () => {
@@ -80,9 +74,7 @@ describe('Express 5 parser', () => {
     app.use(/^\/api/, r);
     const [route] = parseExpressApp(app);
     expect(route.method).toBe('get');
-    expect(route.pathParams).toEqual([
-      { name: 'id', in: 'path', required: true, type: 'param' },
-    ]);
+    expect(route.pathParams).toEqual([{ name: 'id', in: 'path', required: true, type: 'param' }]);
   });
 
   it('array mount path: leaf params only, no throw', () => {
@@ -91,9 +83,7 @@ describe('Express 5 parser', () => {
     app.use(['/v1', '/v2'], r);
     const [route] = parseExpressApp(app);
     expect(route.method).toBe('get');
-    expect(route.pathParams).toEqual([
-      { name: 'id', in: 'path', required: true, type: 'param' },
-    ]);
+    expect(route.pathParams).toEqual([{ name: 'id', in: 'path', required: true, type: 'param' }]);
   });
 
   it('three-level nested mount: all ancestor params are reported', () => {
@@ -117,9 +107,7 @@ describe('Express 5 parser', () => {
     r.get('/x', ok);
     app.use('/api{/:v}', r);
     const [route] = parseExpressApp(app);
-    expect(route.pathParams).toEqual([
-      { name: 'v', in: 'path', required: false, type: 'param' },
-    ]);
+    expect(route.pathParams).toEqual([{ name: 'v', in: 'path', required: false, type: 'param' }]);
   });
 
   it('nested optional groups: inner param is structurally optional', () => {
@@ -134,9 +122,7 @@ describe('Express 5 parser', () => {
   it('wildcard inside a group is still reported as wildcard / not required', () => {
     app.get('/{*splat}', ok);
     const [route] = parseExpressApp(app);
-    expect(route.pathParams).toEqual([
-      { name: 'splat', in: 'path', required: false, type: 'wildcard' },
-    ]);
+    expect(route.pathParams).toEqual([{ name: 'splat', in: 'path', required: false, type: 'wildcard' }]);
   });
 
   it('parses Router#route().get().post() as separate entries (issue #7 parity)', () => {
@@ -207,9 +193,7 @@ describe('Express 5 parser', () => {
     const [route] = parseExpressApp(app);
     expect(route.method).toBe('put');
     expect(route.path).toBe('/items/:id');
-    expect(route.pathParams).toEqual([
-      { name: 'id', in: 'path', required: true, type: 'param' },
-    ]);
+    expect(route.pathParams).toEqual([{ name: 'id', in: 'path', required: true, type: 'param' }]);
   });
 
   it('PATCH round-trip', () => {
@@ -229,16 +213,7 @@ describe('Express 5 parser', () => {
   // --- G4: full chained .route() with all methods -------------------------
 
   it('.route().all().get().post().put().patch().delete().head().options() — all explicit methods emitted, .all() skipped', () => {
-    app
-      .route('/multi')
-      .all(ok)
-      .get(ok)
-      .post(ok)
-      .put(ok)
-      .patch(ok)
-      .delete(ok)
-      .head(ok)
-      .options(ok);
+    app.route('/multi').all(ok).get(ok).post(ok).put(ok).patch(ok).delete(ok).head(ok).options(ok);
 
     const parsed = parseExpressApp(app);
     const methods = parsed.map((r) => r.method);
@@ -267,9 +242,7 @@ describe('Express 5 parser', () => {
     expect(instrumentExpress5Router()).toBe(true);
 
     app.get('/health', ok);
-    expect(parseExpressApp(app)).toEqual([
-      { path: '/health', method: 'get', pathParams: [] },
-    ]);
+    expect(parseExpressApp(app)).toEqual([{ path: '/health', method: 'get', pathParams: [] }]);
   });
 
   // --- A2: 4-arg error middleware silently skipped ------------------------
@@ -286,9 +259,7 @@ describe('Express 5 parser', () => {
 
   it('bare 3-arg fallthrough handler (404 catchall) is silently skipped', () => {
     app.get('/x', ok);
-    app.use((_req: unknown, res: { status: (n: number) => { send: () => void } }) =>
-      res.status(404).send(),
-    );
+    app.use((_req: unknown, res: { status: (n: number) => { send: () => void } }) => res.status(404).send());
     const parsed = parseExpressApp(app);
     expect(parsed).toEqual([{ path: '/x', method: 'get', pathParams: [] }]);
   });
