@@ -164,8 +164,11 @@ fi
 
 # Bump package.json and package-lock.json. The lockfile has the version in two
 # places (top-level "version" and packages."".version) — npm version covers both.
+# --ignore-scripts: the release flow owns commit/tag/push; any preversion /
+# version / postversion hook would interfere (e.g. a stray `git push` on a
+# branch with no upstream aborts the release mid-flight).
 info "bumping package.json + package-lock.json to $NEW_VERSION"
-npm version "$NEW_VERSION" --no-git-tag-version --allow-same-version >/dev/null
+npm version "$NEW_VERSION" --no-git-tag-version --allow-same-version --ignore-scripts >/dev/null
 
 # Sanity: verify the bump landed in both files.
 PKG_VER=$(node -p "require('./package.json').version")
