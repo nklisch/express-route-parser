@@ -6,28 +6,30 @@ import { ORIGINAL_PATH } from './instrument';
  *
  * Strategy: walk the router tree, joining captured mount paths
  * (recorded by the `instrument` patch) with each `route.path`. Path-parameter
- * extraction uses path-to-regexp v8's `pathToRegexp(path).keys`, which gives
- * us `{ type: 'param' | 'wildcard', name: string }` directly — no regex
- * source parsing.
+ * extraction uses path-to-regexp v8's `parse()`, which exposes the structural
+ * AST (`Text | Parameter | Wildcard | Group`). We walk the AST per layer and
+ * accumulate parameters across nested mounts so the leaf route reports its
+ * full ancestor chain, matching v4 behavior.
  */
 export const parseV5 = (
   router: V5RouterStack,
   options: ParseOptions,
 ): RouteMetaData[] | RouteMetaDataMulti[] => {
   const out: (RouteMetaData | RouteMetaDataMulti)[] = [];
-  walkStack(router.stack, '', out, options.multipleMetadata === true);
+  walkStack(router.stack, '', [], out, options.multipleMetadata === true);
   return out;
 };
 
 const walkStack = (
   stack: V5Layer[],
   parent: string,
+  parentParams: Parameter[],
   out: (RouteMetaData | RouteMetaDataMulti)[],
   multipleMetadata: boolean,
 ): void => {
   for (const layer of stack) {
     if (layer.route) {
-      emitRoute(layer, parent, out, multipleMetadata);
+      emitRoute(layer, parent, parentParams, out, multipleMetadata);
     } else if (layer.handle && Array.isArray((layer.handle as V5RouterStack).stack)) {
       const mountPath = layer[ORIGINAL_PATH];
       if (mountPath === undefined && layer.name === 'router') {
@@ -40,7 +42,16 @@ const walkStack = (
       }
       const newParent =
         mountPath !== undefined ? joinPath(parent, mountPathToString(mountPath)) : parent;
-      walkStack((layer.handle as V5RouterStack).stack, newParent, out, multipleMetadata);
+      // Only string mount paths can carry path-to-regexp params. Regex and
+      // array mount forms have no named segments — skip them silently.
+      const segmentParams = typeof mountPath === 'string' ? extractParameters(mountPath) : [];
+      walkStack(
+        (layer.handle as V5RouterStack).stack,
+        newParent,
+        [...parentParams, ...segmentParams],
+        out,
+        multipleMetadata,
+      );
     }
     // else: bare middleware — skipped
   }
@@ -49,6 +60,7 @@ const walkStack = (
 const emitRoute = (
   layer: V5Layer,
   parent: string,
+  parentParams: Parameter[],
   out: (RouteMetaData | RouteMetaDataMulti)[],
   multipleMetadata: boolean,
 ): void => {
@@ -57,7 +69,7 @@ const emitRoute = (
   const routePathRaw = layer.route.path;
   const finalPath = joinPath(parent, routePathRaw);
 
-  const pathParams = extractParameters(routePathRaw);
+  const pathParams = [...parentParams, ...extractParameters(routePathRaw)];
 
   // Group by HTTP method (issue #7 fix logic — same shape in v5)
   const methodGroups = new Map<string, V5RouteEntry[]>();
@@ -97,62 +109,55 @@ const emitRoute = (
 
 /**
  * Extract path parameters from an Express 5 route path string using
- * path-to-regexp v8. Returns an empty array for paths with no parameters
- * or for non-string (regex / array) paths — those aren't parsed for params.
+ * path-to-regexp v8's structural `parse()`. Returns an empty array for paths
+ * with no parameters or for non-string (regex / array) paths — those aren't
+ * parsed for params.
+ *
+ * Optionality is structural: a `:name` or `*name` token is reported with
+ * `required: false` iff it appears inside a `{...}` group in the path AST.
+ * Wildcards are always reported `required: false` (they match zero or more
+ * segments by definition).
  */
 const extractParameters = (path: string | RegExp | (string | RegExp)[]): Parameter[] => {
   if (typeof path !== 'string') return [];
 
   // Lazy-require so we don't load path-to-regexp on Express 4-only deployments.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
-  const { pathToRegexp } = require('path-to-regexp');
-  const p2r = pathToRegexp as (
-    s: string,
-  ) => { regexp: RegExp; keys: { type: 'param' | 'wildcard'; name: string }[] };
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+  const { parse } = require('path-to-regexp') as typeof import('path-to-regexp');
 
-  let parsed: { keys: { type: 'param' | 'wildcard'; name: string }[] };
+  let data: import('path-to-regexp').TokenData;
   try {
-    parsed = p2r(path);
+    data = parse(path);
   } catch {
-    // Path-to-regexp v8 throws on syntactically invalid paths. Fall back to
+    // path-to-regexp v8 throws on syntactically invalid paths. Fall back to
     // empty params; the user's paths are their problem.
     return [];
   }
 
-  return parsed.keys.map((k) => ({
-    name: k.name,
-    in: 'path',
-    // path-to-regexp v8 doesn't model "optional" as a flag on the key; an
-    // optional segment in the path source produces a param with the same shape
-    // but the segment is wrapped in `{...}`. Detecting that requires a second
-    // pass on the raw source. For v1 of this design: report `required: true`
-    // for non-wildcard params unless we can detect optional (see implementation note).
-    required: k.type !== 'wildcard' && !isOptional(path, k.name),
-    type: k.type,
-  }));
+  const out: Parameter[] = [];
+  walkTokens(data.tokens, false, out);
+  return out;
 };
 
-/**
- * Heuristic: detect if a named segment appears inside `{...}` in the path
- * source. path-to-regexp v8 expresses optional segments via `{...}` wrappers
- * around the segment; the segment's `key.name` is preserved.
- *
- * Examples:
- *
- * - `/users/:id` — id NOT optional
- * - `/users/{:id}` — id optional
- * - `/users{/:id}` — id optional with leading slash
- * - `/files/*splat` — splat (separately classified as wildcard)
- * - `/files/{*splat}` — wildcard, also optional in zero-match sense
- */
-const isOptional = (rawPath: string, name: string): boolean => {
-  // Find a `{...}` group containing `:name` or `*name`.
-  const re = new RegExp('\\{[^}]*[:*]' + escapeRegex(name) + '[^a-zA-Z0-9_]', 'g');
-  const altRe = new RegExp('\\{[^}]*[:*]' + escapeRegex(name) + '\\}', 'g');
-  return re.test(rawPath) || altRe.test(rawPath);
+const walkTokens = (
+  tokens: import('path-to-regexp').Token[],
+  inGroup: boolean,
+  out: Parameter[],
+): void => {
+  for (const t of tokens) {
+    if (t.type === 'param' || t.type === 'wildcard') {
+      out.push({
+        name: t.name,
+        in: 'path',
+        required: !inGroup && t.type !== 'wildcard',
+        type: t.type,
+      });
+    } else if (t.type === 'group') {
+      walkTokens(t.tokens, true, out);
+    }
+    // 'text' tokens carry no params
+  }
 };
-
-const escapeRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const joinPath = (parent: string, child: string): string => {
   if (!parent) return child || '/';

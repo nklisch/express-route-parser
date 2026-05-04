@@ -4,6 +4,7 @@
 import './express-parser/instrument';
 
 export { parseExpressApp } from './express-parser';
+export { instrumentExpress5Router } from './express-parser/instrument';
 export { withMetadata } from './with-metadata';
 export * from './types';
 export * from './renderers';
