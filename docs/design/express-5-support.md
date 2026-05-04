@@ -1120,16 +1120,32 @@ test -f lib/express-parser/index.js
 npm run lint
 ```
 
-## Hardening Options (Not Implemented Now)
+## Hardening Options
 
-- **Surface ancestor-router params on the leaf `RouteMetaData`** — current v5 parser only emits the leaf route's own params (e.g., `/api/:v/users/:id` → `pathParams: [{ name: 'id' }]`, missing `:v`). The v4 parser carries ancestors. Worth fixing for parity in a follow-up.
-- **Parse path-to-regexp v8 keys structurally** instead of regex-detecting `{...}` for optionality. If/when v8 exposes a richer parse API, swap.
-- **Provide a public `instrumentExpress5Router()` re-export** if power users ask for it. Currently only available via deep import.
-- **Tests for `EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT=1` path** via spawned subprocess. Skipped in v1 because of in-process module-cache reuse complexity.
-- **TypeScript discriminated union** between `Parameter` (v4) and `Parameter5` (v5) — currently a single shape with optional `type`. Discriminated form would be more rigorous; less DX-friendly.
+### Implemented in 2.0.0
+
+- ~~**Surface ancestor-router params on the leaf `RouteMetaData`**~~ — done. v5 walker now
+  accumulates ancestor params per layer (`walkStack(stack, parent, parentParams[], ...)`),
+  matching v4 parity. See `src/express-parser/v5.ts`.
+- ~~**Parse path-to-regexp v8 keys structurally** instead of regex-detecting `{...}` for
+  optionality~~ — done. Replaced the `isOptional` heuristic with a walk over `parse()`'s
+  public AST. `Group` tokens are the structural source of optionality. See `extractParameters`
+  / `walkTokens` in `src/express-parser/v5.ts`.
+- ~~**Provide a public `instrumentExpress5Router()` re-export**~~ — done. Now exported from
+  `src/index.ts`.
+- ~~**Tests for `EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT=1` path** via spawned subprocess~~ —
+  done. See `src/__tests__/no-auto-instrument.test.ts` (env-var skip + manual instrument) and
+  `src/__tests__/import-order.test.ts` (import-order failure mode).
+
+### Still Deferred
+
+- **TypeScript discriminated union** between `Parameter` (v4) and `Parameter5` (v5) — currently
+  a single shape with optional `type`. Discriminated form would be more rigorous; less DX-friendly.
 - **Expose `instrument`'s patched-marker symbol** for testing tools that want to verify their setup.
-- **Compatibility for path-to-regexp v6/v7** (Express 4.21+ may use these in minor variations) — currently we only test against v0.x (Express 4.18) and v8 (Express 5.2).
-- **Renderer support for `Parameter.type`** — render wildcard/optional differently in HTML/Markdown. Probably worth doing as a follow-up minor.
+- **Compatibility for path-to-regexp v6/v7** (Express 4.21+ may use these in minor variations) —
+  currently we only test against v0.x (Express 4.18) and v8 (Express 5.2).
+- **Renderer support for `Parameter.type`** — render wildcard/optional differently in
+  HTML/Markdown. Probably worth doing as a follow-up minor.
 
 ## References
 

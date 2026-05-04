@@ -171,7 +171,17 @@ const routes = parseExpressApp(app);
 
 Why: Express 5 stores mount paths only as compiled matcher closures; the original path string is unrecoverable after `Router.use(...)` returns. We patch `Router.prototype.use` and `.route` (auto-installed when this package is imported) to capture mount paths at registration time. The patch must be in place before any router is constructed.
 
-If your build sometimes constructs routers in modules imported before `express-route-parser`, set `EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT=1` and call `instrumentExpress5Router()` manually at the right time.
+If your build sometimes constructs routers in modules imported before `express-route-parser`, set `EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT=1` and call `instrumentExpress5Router()` manually at the right time:
+
+```typescript
+// EXPRESS_ROUTE_PARSER_NO_AUTO_INSTRUMENT=1 must be set in the environment
+import { instrumentExpress5Router, parseExpressApp } from 'express-route-parser';
+
+instrumentExpress5Router();              // BEFORE any router is constructed
+import express from 'express';           // routers built after this point are captured
+```
+
+`instrumentExpress5Router()` is idempotent — calling it multiple times is safe and returns `true` after the first successful patch.
 
 ### Express 5 path-syntax notes
 
